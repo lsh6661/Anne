@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>手机考勤 · 高二名单</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: #f2f5fa;
+      padding: 12px 10px 40px;
+      min-height: 100vh;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding: 0 4px;
+    }
+
+    .app-header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #0b2b4a;
+      letter-spacing: -0.02em;
+    }
+
+    .reset-btn {
+      background: transparent;
+      border: 1px solid #cbd9e8;
+      color: #25547b;
+      font-size: 0.8rem;
+      padding: 6px 16px;
+      border-radius: 30px;
+      font-weight: 500;
+      transition: 0.1s;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .reset-btn:active {
+      background: #d9e2ec;
+    }
+
+    /* 班级区块 */
+    .class-block {
+      margin-bottom: 16px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 3px 10px rgba(0, 20, 40, 0.05);
+      overflow: hidden;
+      border: 1px solid #e2eaf3;
+    }
+
+    .class-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: #eef3fc;
+      border-bottom: 1px solid #d5e0ec;
+      font-weight: 600;
+      font-size: 1rem;
+      color: #113355;
+    }
+
+    .class-title .class-name {
+      background: #1e3b5c;
+      color: white;
+      padding: 2px 12px;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+
+    .class-stats {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #2c577a;
+      background: #ffffffcc;
+      padding: 2px 10px;
+      border-radius: 30px;
+      border: 1px solid #b9cee6;
+    }
+
+    /* 学生网格 —— 直接排列 */
+    .student-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px;
+      padding: 12px 14px 14px;
+    }
+
+    .student-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8fafd;
+      border-radius: 40px;
+      padding: 7px 12px 7px 14px;
+      border: 1.5px solid #dbe4ed;
+      transition: all 0.12s ease;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      min-height: 46px;
+    }
+
+    .student-item:active {
+      transform: scale(0.97);
+      background: #e8eef6;
+    }
+
+    .student-item.present {
+      background: #e3f5e9;
+      border-color: #58b27e;
+      box-shadow: inset 0 0 0 1px #8ac9a5;
+    }
+
+    .student-item.absent {
+      background: #ffe9e9;
+      border-color: #d96b6b;
+      box-shadow: inset 0 0 0 1px #e69c9c;
+      opacity: 0.9;
+    }
+
+    .student-name {
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: #1a2e44;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 6px;
+    }
+
+    .student-item.present .student-name {
+      color: #0f4629;
+    }
+
+    .student-item.absent .student-name {
+      color: #8f2e2e;
+      text-decoration: line-through 1.5px rgba(180, 60, 60, 0.5);
+    }
+
+    .status-indicator {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.9rem;
+      font-weight: 700;
+      background: #e6edf5;
+      color: #3d5e7d;
+      transition: 0.1s;
+    }
+
+    .student-item.present .status-indicator {
+      background: #2e8b57;
+      color: white;
+    }
+
+    .student-item.absent .status-indicator {
+      background: #b84848;
+      color: white;
+    }
+
+    /* 底部提示 */
+    .footer-hint {
+      text-align: center;
+      font-size: 0.78rem;
+      color: #6a7e93;
+      margin-top: 18px;
+      padding: 10px 16px;
+      background: #ffffffb3;
+      border-radius: 60px;
+      border: 1px solid #d9e2ec;
+      letter-spacing: 0.2px;
+    }
+
+    /* 总统计 */
+    .total-stats {
+      display: flex;
+      gap: 12px;
+      padding: 8px 6px 0;
+      font-size: 0.8rem;
+      color: #2f5470;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-header">
+    <h1>📋 考勤点名</h1>
+    <button class="reset-btn" id="resetAllBtn">重置</button>
+  </div>
+
+  <!-- 直接排列所有学生（按班级分组） -->
+  <div id="classContainer"></div>
+
+  <div class="footer-hint">
+    👆 点击学生切换状态：未标记 → 出勤 → 缺席 → 未标记
+  </div>
+
+  <script>
+    // ---------- 原始数据（按班级顺序整理） ----------
+    const rawList = [
+      // 高二1班
+      { name: "何冠争", className: "高二1班" },
+      // 高二2班
+      { name: "车晓霞", className: "高二2班" },
+      // 高二5班
+      { name: "李君沐", className: "高二5班" },
+      { name: "林夏茉", className: "高二5班" },
+      // 高二6班
+      { name: "刘铠铭", className: "高二6班" },
+      { name: "龙锦召", className: "高二6班" },
+      { name: "吴科乐", className: "高二6班" },
+      { name: "廖杰夫", className: "高二6班" },
+      // 高二7班
+      { name: "何彩云", className: "高二7班" },
+      { name: "湛洛尘", className: "高二7班" },
+      { name: "黄诗媛", className: "高二7班" },
+      { name: "李智强", className: "高二7班" },
+      // 高二8班
+      { name: "黄子豪", className: "高二8班" },
+      { name: "何其金", className: "高二8班" },
+      // 高二9班
+      { name: "范智滔", className: "高二9班" },
+      { name: "谢锐敏", className: "高二9班" },
+      { name: "陈俊宇", className: "高二9班" },
+      { name: "李可杨", className: "高二9班" },
+      // 高二10班
+      { name: "郭睿敏", className: "高二10班" },
+      { name: "陈致杨", className: "高二10班" },
+      { name: "刘桓甫", className: "高二10班" },
+      // 高二11班
+      { name: "吕泳妍", className: "高二11班" },
+      { name: "付明轩", className: "高二11班" },
+      { name: "黎志远", className: "高二11班" },
+      { name: "李奕潼", className: "高二11班" },
+      // 高二12班
+      { name: "吕恩淇", className: "高二12班" },
+      { name: "苏雨桐", className: "高二12班" },
+      { name: "陈锦鸿", className: "高二12班" },
+      { name: "黄楚瑜", className: "高二12班" },
+      // 高二13班
+      { name: "钟东展", className: "高二13班" },
+      // 高二14班
+      { name: "叶晓韵", className: "高二14班" },
+      { name: "华家熙", className: "高二14班" },
+      // 高二15班
+      { name: "黄梓欣", className: "高二15班" },
+      { name: "罗悠蓝", className: "高二15班" },
+      { name: "古进杰", className: "高二15班" },
+      { name: "刘晋铭", className: "高二15班" },
+      { name: "冼建树", className: "高二15班" },
+      // 高二16班
+      { name: "陈晓倩", className: "高二16班" },
+      { name: "黎思佟", className: "高二16班" },
+      { name: "黄良金", className: "高二16班" },
+      { name: "程洛斌", className: "高二16班" },
+      // 高二17班
+      { name: "陈雅雯", className: "高二17班" },
+      { name: "钟萱悦", className: "高二17班" },
+      // 高二21班
+      { name: "刘权锐", className: "高二21班" },
+      { name: "李纬轩", className: "高二21班" },
+      // 高二25班
+      { name: "邓崇文", className: "高二25班" },
+      { name: "苏铉深", className: "高二25班" },
+      // 高二26班
+      { name: "李银姬", className: "高二26班" },
+      { name: "梁欣怡", className: "高二26班" },
+      { name: "凌胜彬", className: "高二26班" },
+      // 高二27班
+      { name: "黄梓洪", className: "高二27班" },
+      { name: "黄冠淇", className: "高二27班" },
+      { name: "丁泽宇", className: "高二27班" },
+      { name: "黄福权", className: "高二27班" },
+      // 高二28班
+      { name: "温心怡", className: "高二28班" },
+      { name: "邓冬竹", className: "高二28班" },
+      { name: "梁文波", className: "高二28班" },
+      { name: "邱建浩", className: "高二28班" },
+      { name: "汤明皓", className: "高二28班" },
+      { name: "苏楚淇", className: "高二28班" }
+    ];
+
+    // ---------- 状态管理 ----------
+    // 0: 未标记, 1: 出勤, 2: 缺席
+    const STORAGE_KEY = 'attendance_gaoer_list';
+    let attendanceState = {}; // 以 className_name 为键
+
+    // 加载状态
+    function loadState() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          attendanceState = JSON.parse(saved);
+        } catch (e) {
+          attendanceState = {};
+        }
+      } else {
+        attendanceState = {};
+      }
+      // 确保所有学生都有初始状态0
+      rawList.forEach(s => {
+        const key = `${s.className}_${s.name}`;
+        if (attendanceState[key] === undefined) {
+          attendanceState[key] = 0;
+        }
+      });
+    }
+
+    // 保存状态
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(attendanceState));
+    }
+
+    // 获取状态
+    function getStatus(className, name) {
+      const key = `${className}_${name}`;
+      return attendanceState[key] !== undefined ? attendanceState[key] : 0;
+    }
+
+    // 设置状态
+    function setStatus(className, name, value) {
+      const key = `${className}_${name}`;
+      attendanceState[key] = value;
+      saveState();
+    }
+
+    // 循环切换状态
+    function cycleStatus(className, name) {
+      const current = getStatus(className, name);
+      let next = 0;
+      if (current === 0) next = 1;
+      else if (current === 1) next = 2;
+      else next = 0;
+      setStatus(className, name, next);
+      return next;
+    }
+
+    // 按班级分组，保持顺序
+    function groupByClass() {
+      const map = new Map();
+      rawList.forEach(student => {
+        const cls = student.className;
+        if (!map.has(cls)) map.set(cls, []);
+        map.get(cls).push(student);
+      });
+      // 按班级数字排序（高二1班, 高二2班, 高二5班...）
+      const sortedClasses = Array.from(map.keys()).sort((a, b) => {
+        const numA = parseInt(a.match(/\d+/)?.[0] || 0);
+        const numB = parseInt(b.match(/\d+/)?.[0] || 0);
+        return numA - numB;
+      });
+      return { map, sortedClasses };
+    }
+
+    // 渲染所有班级区块
+    function renderAll() {
+      const container = document.getElementById('classContainer');
+      const { map, sortedClasses } = groupByClass();
+
+      let html = '';
+
+      sortedClasses.forEach(className => {
+        const students = map.get(className) || [];
+        // 统计
+        let presentCount = 0;
+        let absentCount = 0;
+        students.forEach(s => {
+          const status = getStatus(className, s.name);
+          if (status === 1) presentCount++;
+          else if (status === 2) absentCount++;
+        });
+
+        const total = students.length;
+
+        html += `
+          <div class="class-block" data-class="${className}">
+            <div class="class-title">
+              <span class="class-name">${className}</span>
+              <span class="class-stats">
+                ✅ ${presentCount}/${total}
+                ${absentCount > 0 ? ` ｜ ❌ ${absentCount}` : ''}
+              </span>
+            </div>
+            <div class="student-grid">
+        `;
+
+        students.forEach(student => {
+          const status = getStatus(className, student.name);
+          let statusClass = '';
+          let statusIcon = '';
+          if (status === 1) {
+            statusClass = 'present';
+            statusIcon = '✓';
+          } else if (status === 2) {
+            statusClass = 'absent';
+            statusIcon = '✕';
+          } else {
+            statusClass = '';
+            statusIcon = '○';
+          }
+
+          html += `
+            <div class="student-item ${statusClass}" 
+                 data-class="${className}" 
+                 data-name="${student.name}"
+                 data-status="${status}">
+              <span class="student-name">${student.name}</span>
+              <span class="status-indicator">${statusIcon}</span>
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+
+      // 绑定点击事件（事件委托）
+      container.querySelectorAll('.student-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+          const className = this.dataset.class;
+          const studentName = this.dataset.name;
+          const newStatus = cycleStatus(className, studentName);
+          
+          // 更新样式
+          this.classList.remove('present', 'absent');
+          let statusIcon = '';
+          if (newStatus === 1) {
+            this.classList.add('present');
+            statusIcon = '✓';
+          } else if (newStatus === 2) {
+            this.classList.add('absent');
+            statusIcon = '✕';
+          } else {
+            statusIcon = '○';
+          }
+          this.querySelector('.status-indicator').textContent = statusIcon;
+          this.dataset.status = newStatus;
+
+          // 更新该班级统计
+          const classBlock = this.closest('.class-block');
+          if (classBlock) {
+            const classStudents = classBlock.querySelectorAll('.student-item');
+            let present = 0, absent = 0;
+            classStudents.forEach(st => {
+              if (st.dataset.status === '1') present++;
+              else if (st.dataset.status === '2') absent++;
+            });
+            const total = classStudents.length;
+            const statsSpan = classBlock.querySelector('.class-stats');
+            if (statsSpan) {
+              statsSpan.innerHTML = `✅ ${present}/${total}` + (absent > 0 ? ` ｜ ❌ ${absent}` : '');
+            }
+          }
+        });
+      });
+    }
+
+    // 重置所有状态
+    function resetAll() {
+      if (confirm('确定重置所有考勤状态吗？')) {
+        rawList.forEach(s => {
+          const key = `${s.className}_${s.name}`;
+          attendanceState[key] = 0;
+        });
+        saveState();
+        renderAll();
+      }
+    }
+
+    // 初始化
+    function init() {
+      loadState();
+      renderAll();
+      document.getElementById('resetAllBtn').addEventListener('click', resetAll);
+    }
+
+    init();
+  </script>
+</body>
+</html>
